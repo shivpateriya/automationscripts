@@ -16,6 +16,13 @@ def setup_logging():
         filename=log_file
     )
 
+
+    # Add a file handler to enable appending logs
+    file_handler = logging.FileHandler(log_file, mode='a')
+    file_handler.setFormatter(logging.Formatter('[%(asctime)s] [%(levelname)s] %(message)s'))
+    logging.getLogger().addHandler(file_handler)
+    
+    
 def check_glue_job_status(job_names, region, webhook_url):
     glue_client = boto3.client('glue', region_name=region)
     failed_jobs = {}
