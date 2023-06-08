@@ -24,18 +24,21 @@ def check_glue_job_status(job_names, region, webhook_url):
 
             if len(job_runs) > 0:
                 failed_count = 0
+                failed_job_times = []
                 for job_run in job_runs:
                     job_run_state = job_run['JobRunState']
-                    job_run_time = job_run['StartedOn'].date()
+                    job_run_time = job_run['StartedOn'].replace(tzinfo=None)  # Convert to naive datetime
 
-                    if job_run_state == 'FAILED' and job_run_time == today:
+                    if job_run_state == 'FAILED' and job_run_time.date() == today:
                         failed_count += 1
+                        failed_job_times.append(job_run_time.strftime('%Y-%m-%d %H:%M:%S'))
 
-                        if job_run['StartedOn'] > one_hour_ago:
+                        if job_run_time > one_hour_ago:
                             failed_jobs.append(job_name)
 
                 if failed_count > 0:
                     logging.info(f"The job '{job_name}' has failed {failed_count} time(s) today.")
+                    logging.info(f"Time(s) of failure: {', '.join(failed_job_times)}")
                 else:
                     logging.info(f"The job '{job_name}' is not failing today.")
 
@@ -49,10 +52,12 @@ def check_glue_job_status(job_names, region, webhook_url):
             logging.error(f"An error occurred while checking the job status for '{job_name}': {str(e)}")
 
     if failed_jobs:
-        send_webhook(webhook_url, failed_jobs)
+        send_webhook(webhook_url, failed_jobs, failed_count)
 
-def send_webhook(webhook_url, failed_jobs):
-    message = "**AWS Glue Job Status**\n\nThese jobs are failing:\n\n" + "\n".join(failed_jobs)
+def send_webhook(webhook_url, failed_jobs, failed_count):
+    message = "**AWS Glue Job Status**\n\nThese jobs are failing:\n\n"
+    message += "\n".join(failed_jobs)
+    message += f"\n\nTotal number of job failures: {failed_count}"
 
     data = {
         "text": message,
