@@ -43,7 +43,11 @@ def check_glue_job_status(job_names, region, webhook_url):
                         failed_count += 1
 
                 if failed_count > 0:
-                    failed_jobs[job_name] = failed_count
+                    # Check failed count for today
+                    response = glue_client.get_job_run(JobName=job_name, RunId={'PrevRunId': 'PREV_SUCCESSFUL'})
+                    today_failed_count = response['JobRun']['Attempt']
+
+                    failed_jobs[job_name] = (failed_count, today_failed_count)
 
             else:
                 logging.info(f"No job runs found for the job '{job_name}'.")
@@ -59,9 +63,10 @@ def check_glue_job_status(job_names, region, webhook_url):
 
 def send_webhook(webhook_url, failed_jobs):
     message = "**AWS Glue Job Status**\n\nThese jobs have failed in the last 1 hour:\n\n"
-    for job_name, failed_count in failed_jobs.items():
+    for job_name, (failed_count, today_failed_count) in failed_jobs.items():
         message += f"Job Name: {job_name}\n"
-        message += f"Number of Failures: {failed_count}\n\n"
+        message += f"Number of Failures in the Last 1 Hour: {failed_count}\n"
+        message += f"Number of Failures Today: {today_failed_count}\n\n"
 
     data = {
         "text": message,
@@ -82,7 +87,8 @@ def send_webhook(webhook_url, failed_jobs):
         logging.error("An error occurred while sending the webhook: %s", str(e))
 
 # Setup logging
-setup_logging()
+setup_logging
+
 
 # Usage: Provide a list of Glue job names, the region, and the webhook URL as arguments to the function
 job_names = [""]
