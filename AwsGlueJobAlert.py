@@ -16,17 +16,15 @@ def setup_logging():
         filename=log_file
     )
 
-
     # Add a file handler to enable appending logs
     file_handler = logging.FileHandler(log_file, mode='a')
     file_handler.setFormatter(logging.Formatter('[%(asctime)s] [%(levelname)s] %(message)s'))
     logging.getLogger().addHandler(file_handler)
-    
-    
+
 def check_glue_job_status(job_names, region, webhook_url):
     glue_client = boto3.client('glue', region_name=region)
     failed_jobs = {}
-    current_time = datetime.datetime.now()
+    current_time = datetime.datetime.utcnow()
     one_hour_ago = current_time - datetime.timedelta(hours=1)
     today = current_time.date()
 
@@ -41,7 +39,7 @@ def check_glue_job_status(job_names, region, webhook_url):
                     job_run_state = job_run['JobRunState']
                     job_run_time = job_run['StartedOn'].replace(tzinfo=None)  # Convert to naive datetime
 
-                    if job_run_state == 'FAILED' and job_run_time.date() == today:
+                    if job_run_state == 'FAILED' and job_run_time >= one_hour_ago:
                         failed_count += 1
 
                 if failed_count > 0:
@@ -60,7 +58,7 @@ def check_glue_job_status(job_names, region, webhook_url):
         send_webhook(webhook_url, failed_jobs)
 
 def send_webhook(webhook_url, failed_jobs):
-    message = "**AWS Glue Job Status**\n\nThese jobs have failed today:\n\n"
+    message = "**AWS Glue Job Status**\n\nThese jobs have failed in the last 1 hour:\n\n"
     for job_name, failed_count in failed_jobs.items():
         message += f"Job Name: {job_name}\n"
         message += f"Number of Failures: {failed_count}\n\n"
@@ -83,11 +81,11 @@ def send_webhook(webhook_url, failed_jobs):
     except requests.exceptions.RequestException as e:
         logging.error("An error occurred while sending the webhook: %s", str(e))
 
-# Setup logging configuration
+# Setup logging
 setup_logging()
 
-# Usage: Provide a list of Glue job names, the region, and webhook URL as arguments to the function
-job_names = []
+# Usage: Provide a list of Glue job names, the region, and the webhook URL as arguments to the function
+job_names = [""]
 region = "us-east-1"
-webhook_url = "your-webhook-url"
+webhook_url = "https://your_webhook_url_here"
 check_glue_job_status(job_names, region, webhook_url)
