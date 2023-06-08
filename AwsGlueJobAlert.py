@@ -2,17 +2,23 @@ import boto3
 import requests
 import datetime
 import logging
+import os
 
 def setup_logging():
+    log_folder = "logs"  # Specify the folder where logs should be saved
+    os.makedirs(log_folder, exist_ok=True)
+    log_file = os.path.join(log_folder, "glue_job_logs.log")
+
     logging.basicConfig(
         level=logging.INFO,
         format='[%(asctime)s] [%(levelname)s] %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
+        datefmt='%Y-%m-%d %H:%M:%S',
+        filename=log_file
     )
 
 def check_glue_job_status(job_names, region, webhook_url):
     glue_client = boto3.client('glue', region_name=region)
-    failed_jobs = []
+    failed_jobs = {}
     current_time = datetime.datetime.now()
     one_hour_ago = current_time - datetime.timedelta(hours=1)
     today = current_time.date()
@@ -24,23 +30,15 @@ def check_glue_job_status(job_names, region, webhook_url):
 
             if len(job_runs) > 0:
                 failed_count = 0
-                failed_job_times = []
                 for job_run in job_runs:
                     job_run_state = job_run['JobRunState']
                     job_run_time = job_run['StartedOn'].replace(tzinfo=None)  # Convert to naive datetime
 
                     if job_run_state == 'FAILED' and job_run_time.date() == today:
                         failed_count += 1
-                        failed_job_times.append(job_run_time.strftime('%Y-%m-%d %H:%M:%S'))
-
-                        if job_run_time > one_hour_ago:
-                            failed_jobs.append(job_name)
 
                 if failed_count > 0:
-                    logging.info(f"The job '{job_name}' has failed {failed_count} time(s) today.")
-                    logging.info(f"Time(s) of failure: {', '.join(failed_job_times)}")
-                else:
-                    logging.info(f"The job '{job_name}' is not failing today.")
+                    failed_jobs[job_name] = failed_count
 
             else:
                 logging.info(f"No job runs found for the job '{job_name}'.")
@@ -52,17 +50,21 @@ def check_glue_job_status(job_names, region, webhook_url):
             logging.error(f"An error occurred while checking the job status for '{job_name}': {str(e)}")
 
     if failed_jobs:
-        send_webhook(webhook_url, failed_jobs, failed_count)
+        send_webhook(webhook_url, failed_jobs)
 
-def send_webhook(webhook_url, failed_jobs, failed_count):
-    message = "**AWS Glue Job Status**\n\nThese jobs are failing:\n\n"
-    message += "\n".join(failed_jobs)
-    message += f"\n\nTotal number of job failures: {failed_count}"
+def send_webhook(webhook_url, failed_jobs):
+    message = "**AWS Glue Job Status**\n\nThese jobs have failed today:\n\n"
+    for job_name, failed_count in failed_jobs.items():
+        message += f"Job Name: {job_name}\n"
+        message += f"Number of Failures: {failed_count}\n\n"
 
     data = {
         "text": message,
         "mrkdwn": True
     }
+
+    logging.info("Sending webhook message:")
+    logging.info(message)
 
     try:
         response = requests.post(webhook_url, json=data)
