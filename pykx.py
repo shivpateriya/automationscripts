@@ -3,6 +3,7 @@ import pykx as kx
 import pandas as pd
 from datetime import date
 import boto3
+import os
 
 # Configure logging
 logging.basicConfig(filename='query.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -40,14 +41,14 @@ def compare_xlsx_with_s3(hostname, port, s3_bucket, s3_key):
         # Read the XLSX file from S3
         s3_client = boto3.client('s3')
         response = s3_client.get_object(Bucket=s3_bucket, Key=s3_key)
-        s3_xlsx = pd.read_excel(response['Body'])
+        s3_xlsx = pd.read_excel(io.BytesIO(response['Body'].read()),header=3)
         
         # Merge the result DataFrame with the S3 DataFrame on 'provState' column
-        merged_df = pd.merge(result, s3_xlsx, on='provState', suffixes=('_result', '_s3'))
+        merged_df = pd.merge(result, s3_xlsx, on='State')
         
         # Compare the rows for each column
         for column in merged_df.columns[1:]:
-            mismatch_rows = merged_df[merged_df[column + '_result'] != merged_df[column + '_s3']]
+            mismatch_rows = merged_df[merged_df[column + '_x'] != merged_df[column + '_y']]
             if not mismatch_rows.empty:
                 logging.info(f"Mismatch found in column '{column}':")
                 logging.info(mismatch_rows)
