@@ -1,0 +1,8 @@
+To monitor memory usage in the production environment, an alert system has been set up.
+If the memory usage exceeds 75%, an alert will be triggered and sent to the "Alert" channel.
+On the other hand, if the memory usage is below 75%, an alert will be sent to the "Info Message - Prod" 
+channel.
+To facilitate this monitoring, a cron job has been configured to run a script every 5 minutes
+on the production server. The script responsible for monitoring memory usage is located at /home/ec2-user/Guardians/memory_percent.py. 
+The cron job executes this script periodically to check the current memory usage and trigger the appropriate alerts based on the predefined 
+thresholds.
