@@ -1,16 +1,14 @@
 import subprocess
 
 scripts = [
-    "script1.py",
-    "script2.py",
-    "script3.py"
+"helllp.py"
 ]
 
 processes = []
 
 # Run the scripts as separate subprocesses
 for script in scripts:
-    process = subprocess.Popen(["python", script])
+    process = subprocess.Popen(["python3", script])
     processes.append(process)
 
 # Wait for all subprocesses to complete
