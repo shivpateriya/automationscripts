@@ -1,12 +1,12 @@
 import subprocess
 
 scripts = [
-"helllp.py"
+"helllp.py",
+"helloexception.py"
 ]
 
 processes = []
 
-# Run the scripts as separate subprocesses
 for script in scripts:
     process = subprocess.Popen(["python3", script])
     processes.append(process)

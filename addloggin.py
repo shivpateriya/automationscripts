@@ -2,8 +2,7 @@ import datetime
 import logging
 
 # Define the operation and script name
-operation_name = "your_operation_name"  # Replace with your desired operation name
-script_name = "your_script_name"  # Replace with your script name
+script_name = "addlogin"  # Replace with your script name
 
 # Set the format for log messages
 log_format = "%(asctime)s - %(levelname)s - %(message)s"
@@ -30,8 +29,8 @@ logging.info("Script completed successfully.")
 current_date = datetime.date.today().strftime("%Y-%m-%d")
 
 # If the log file is from a previous day, clear it
-if log_filename != f"{current_date}.log":
+if log_filename != f"Operational_{script_name}_{current_date}.log":
     with open(log_filename, "w"):
         pass
-    log_filename = f"{current_date}.log"
+    log_filename = f"Operational_{script_name}_{current_date}.log"
     logging.basicConfig(filename=log_filename, level=logging.INFO, format=log_format)
