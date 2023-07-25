@@ -1,25 +1,8 @@
 import boto3
 import requests
 import datetime
-import logging
 import os
 
-def setup_logging():
-    log_folder = "logs"  # Specify the folder where logs should be saved
-    os.makedirs(log_folder, exist_ok=True)
-    log_file = os.path.join(log_folder, "glue_job_logs.log")
-
-    logging.basicConfig(
-        level=logging.INFO,
-        format='[%(asctime)s] [%(levelname)s] %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S',
-        filename=log_file
-    )
-
-    # Add a file handler to enable appending logs
-    file_handler = logging.FileHandler(log_file, mode='a')
-    file_handler.setFormatter(logging.Formatter('[%(asctime)s] [%(levelname)s] %(message)s'))
-    logging.getLogger().addHandler(file_handler)
 
 def check_glue_job_status(job_names, region, webhook_url):
     glue_client = boto3.client('glue', region_name=region)
@@ -49,14 +32,13 @@ def check_glue_job_status(job_names, region, webhook_url):
 
                     failed_jobs[job_name] = (failed_count, today_failed_count)
 
-            else:
-                logging.info(f"No job runs found for the job '{job_name}'.")
+         
 
         except glue_client.exceptions.EntityNotFoundException:
-            logging.error(f"The job '{job_name}' does not exist.")
+            print(f"The job '{job_name}' does not exist.")
 
         except Exception as e:
-            logging.error(f"An error occurred while checking the job status for '{job_name}': {str(e)}")
+            print(f"An error occurred while checking the job status for '{job_name}': {str(e)}")
 
     if failed_jobs:
         send_webhook(webhook_url, failed_jobs)
@@ -73,21 +55,17 @@ def send_webhook(webhook_url, failed_jobs):
         "mrkdwn": True
     }
 
-    logging.info("Sending webhook message:")
-    logging.info(message)
-
     try:
         response = requests.post(webhook_url, json=data)
         if response.status_code == 200:
-            logging.info("Webhook sent successfully.")
+            print("Webhook sent successfully.")
         else:
-            logging.error("Failed to send webhook. Status code: %d", response.status_code)
+            print("Failed to send webhook. Status code: %d", response.status_code)
 
     except requests.exceptions.RequestException as e:
-        logging.error("An error occurred while sending the webhook: %s", str(e))
+        print("An error occurred while sending the webhook: %s", str(e))
 
-# Setup logging
-setup_logging
+
 
 
 # Usage: Provide a list of Glue job names, the region, and the webhook URL as arguments to the function
