@@ -1,5 +1,8 @@
 import os
+import requests
 from datetime import datetime, date, timezone
+
+WEBHOOK_URL = "YOUR_WEBHOOK_URL"  # Replace this with the actual webhook URL
 
 def get_creation_time(file_path):
     stat = os.stat(file_path)
@@ -18,6 +21,10 @@ def find_files_created_today(directory_path):
 
     return file_list
 
+def send_alert(message):
+    payload = {"text": message}
+    requests.post(WEBHOOK_URL, json=payload)
+
 if __name__ == "__main__":
     directory_path = "/path/to/directory"  # Replace this with the actual directory path
     today_files = find_files_created_today(directory_path)
@@ -28,3 +35,4 @@ if __name__ == "__main__":
             print(file_path)
     else:
         print("No files created today in the specified directory.")
+        send_alert("No files created today in the specified directory.")
