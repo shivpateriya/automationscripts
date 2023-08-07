@@ -22,8 +22,12 @@ def find_files_created_today(directory_path):
     return file_list
 
 def send_alert(message):
-    payload = {"text": message}
-    requests.post(WEBHOOK_URL, json=payload)
+    try:
+        payload = {"text": message}
+        response = requests.post(WEBHOOK_URL, json=payload)
+        response.raise_for_status()  # Raise an exception for HTTP errors (4xx and 5xx)
+    except requests.exceptions.RequestException as e:
+        print(f"Error sending alert: {e}")
 
 if __name__ == "__main__":
     directory_path = "/path/to/directory"  # Replace this with the actual directory path
