@@ -1,13 +1,18 @@
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, date, timezone
+
+def get_creation_time(file_path):
+    stat = os.stat(file_path)
+    file_creation_time = datetime.fromtimestamp(stat.st_ctime, tz=timezone.utc).date()
+    return file_creation_time
 
 def find_files_created_today(directory_path):
-    today = datetime.now().date()
+    today = date.today()
     file_list = []
 
     for file in os.listdir(directory_path):
         file_path = os.path.join(directory_path, file)
-        file_creation_time = datetime.fromtimestamp(os.path.getctime(file_path)).date()
+        file_creation_time = get_creation_time(file_path)
         if file_creation_time == today:
             file_list.append(file_path)
 
