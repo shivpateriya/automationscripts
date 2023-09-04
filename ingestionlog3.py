@@ -28,7 +28,9 @@ for file in log_files:
                 capture_data = True
             elif capture_data:
                 if line.strip() and not line.startswith("sensorID"):
-                    tabular_data.append(line.strip())  # Add the line to tabular_data
+                    columns = line.split()
+                    if len(columns) == 6:
+                        tabular_data.append(columns)  # Add the line as a list
                 else:
                     capture_data = False
 
@@ -41,10 +43,7 @@ for file in log_files:
         with open(csv_file_name, 'w', newline='') as csv_file:
             csv_writer = csv.writer(csv_file)
             csv_writer.writerow(['sensorID', 'smpID', 'startTs', 'endTs', 'serialNo', 'MDL_REF_smpID'])
-            for line in tabular_data:
-                columns = line.split()
-                if len(columns) == 6:
-                    csv_writer.writerow(columns)
+            csv_writer.writerows(tabular_data)
 
         # Send alert to Teams
         message = f"CSV file '{csv_file_name}' is stored in this location: {os.path.abspath(csv_file_name)}"
