@@ -27,10 +27,10 @@ for file in log_files:
             if "Unsuccessfully published" in line:
                 capture_data = True
             elif capture_data:
-                if line.strip() and not line.startswith("sensorID"):
-                    columns = line.split()
-                    if len(columns) == 6:
-                        tabular_data.append(columns)  # Add the line as a list
+                if line.strip() and not line.startswith("serialNo extSensorID meterStatusIEE"):
+                    data = line.strip().split()  # Split the line into columns
+                    if len(data) == 9:  # Assuming 9 columns in the tabular data
+                        tabular_data.append(data)  # Add the line as a list
                 else:
                     capture_data = False
 
@@ -42,7 +42,7 @@ for file in log_files:
         # Create CSV file from the tabular data with the specified header
         with open(csv_file_name, 'w', newline='') as csv_file:
             csv_writer = csv.writer(csv_file)
-            csv_writer.writerow(['sensorID', 'smpID', 'startTs', 'endTs', 'serialNo', 'MDL_REF_smpID'])
+            csv_writer.writerow(['serialNo', 'extSensorID', 'meterStatusIEE', 'startTs', 'endTs', 'sensorID', 'status', 'deviceOperationalStatus', 'meterProgramID'])
             csv_writer.writerows(tabular_data)
 
         # Send alert to Teams
