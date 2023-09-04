@@ -16,6 +16,9 @@ teams_webhook_url = "YOUR_TEAMS_WEBHOOK_URL"
 # Get the list of log files matching the pattern
 log_files = glob.glob(pattern)
 
+# Define the header for the CSV file
+csv_header = ['sensorID', 'smpID', 'startTs', 'endTs', 'serialNo', 'MDL_REF_smpID']
+
 # Iterate over each log file
 for file in log_files:
     capture_data = False
@@ -30,7 +33,10 @@ for file in log_files:
                 error_line = line.strip()
             elif capture_data:
                 if line.strip():
-                    captured_data.add(line.strip())  # Add the line to the set
+                    columns = line.split()
+                    # Check if the line has the expected number of columns
+                    if len(columns) == len(csv_header):
+                        captured_data.add(tuple(columns))  # Add the line as a tuple to the set
                 else:
                     capture_data = False
 
@@ -42,16 +48,15 @@ for file in log_files:
         # Write the captured error line and tabular data to the file
         with open(file_name, 'w') as output_file:
             output_file.write(f"{error_line}\n")
-            output_file.write("\n".join(captured_data))
+            for row in captured_data:
+                output_file.write(" ".join(row) + "\n")
 
-        # Create CSV file from the tabular data
+        # Create CSV file from the tabular data with the specified header
         csv_file_name = f"PbcExportUnpublishedError{current_date}dyamanica.csv"
         with open(csv_file_name, 'w', newline='') as csv_file:
             csv_writer = csv.writer(csv_file)
-            csv_writer.writerow(['sensorID', 'smpID', 'startTs', 'endTs', 'serialNo', 'MDL_REF_smpID'])
-            for line in captured_data:
-                columns = line.split()
-                csv_writer.writerow(columns)
+            csv_writer.writerow(csv_header)
+            csv_writer.writerows(captured_data)
 
         # Send alert to Teams
         message = f"CSV file '{csv_file_name}' is stored in this location: {os.path.abspath(csv_file_name)}"
