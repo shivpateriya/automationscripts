@@ -1,6 +1,7 @@
 import glob
 import os
 import requests
+import csv
 from datetime import datetime
 
 # Define the directory containing the log files
@@ -18,7 +19,7 @@ log_files = glob.glob(pattern)
 # Iterate over each log file
 for file in log_files:
     capture_data = False
-    captured_data = []
+    captured_data = set()  # Use a set to store unique rows
     error_line = None
 
     # Open the log file and search for lines containing "Error"
@@ -29,7 +30,7 @@ for file in log_files:
                 error_line = line.strip()
             elif capture_data:
                 if line.strip():
-                    captured_data.append(line.strip())
+                    captured_data.add(line.strip())  # Add the line to the set
                 else:
                     capture_data = False
 
@@ -43,10 +44,19 @@ for file in log_files:
             output_file.write(f"{error_line}\n")
             output_file.write("\n".join(captured_data))
 
+        # Create CSV file from the tabular data
+        csv_file_name = f"PbcExportUnpublishedError{current_date}dyamanica.csv"
+        with open(csv_file_name, 'w', newline='') as csv_file:
+            csv_writer = csv.writer(csv_file)
+            csv_writer.writerow(['sensorID', 'smpID', 'startTs', 'endTs', 'serialNo', 'MDL_REF_smpID'])
+            for line in captured_data:
+                columns = line.split()
+                csv_writer.writerow(columns)
+
         # Send alert to Teams
-        message = f"File '{file_name}' is stored in this location: {os.path.abspath(file_name)}"
+        message = f"CSV file '{csv_file_name}' is stored in this location: {os.path.abspath(csv_file_name)}"
         teams_payload = {"text": message}
         requests.post(teams_webhook_url, json=teams_payload)
 
-        print(f"Captured data and error saved to: {file_name}")
+        print(f"CSV file created and alert sent: {csv_file_name}")
         print("-" * 100)
