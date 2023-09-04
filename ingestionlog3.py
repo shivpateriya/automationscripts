@@ -16,10 +16,12 @@ teams_webhook_url = "YOUR_TEAMS_WEBHOOK_URL"
 # Get the list of log files matching the pattern
 log_files = glob.glob(pattern)
 
+# Create a set to store unique tabular data
+unique_tabular_data = set()
+
 # Iterate over each log file
 for file in log_files:
     capture_data = False
-    tabular_data = []  # Store tabular data lines
 
     # Open the log file and search for lines containing "Unsuccessfully published"
     with open(file, encoding="utf-8") as f:
@@ -30,25 +32,22 @@ for file in log_files:
                 if line.strip() and not line.startswith("serialNo extSensorID meterStatusIEE"):
                     data = line.strip().split()  # Split the line into columns
                     if len(data) == 9:  # Assuming 9 columns in the tabular data
-                        tabular_data.append(data)  # Add the line as a list
-                else:
-                    capture_data = False
+                        unique_tabular_data.add(tuple(data))  # Add the line as a tuple
 
-    if tabular_data:
-        # Construct the CSV file name
-        current_date = datetime.today().strftime('%Y%m%d')
-        csv_file_name = f"PbcExportUnpublishedTabularData{current_date}dyamanica.csv"
+# Construct the CSV file name
+current_date = datetime.today().strftime('%Y%m%d')
+csv_file_name = f"PbcExportUnpublishedTabularData{current_date}dyamanica.csv"
 
-        # Create CSV file from the tabular data with the specified header
-        with open(csv_file_name, 'w', newline='') as csv_file:
-            csv_writer = csv.writer(csv_file)
-            csv_writer.writerow(['serialNo', 'extSensorID', 'meterStatusIEE', 'startTs', 'endTs', 'sensorID', 'status', 'deviceOperationalStatus', 'meterProgramID'])
-            csv_writer.writerows(tabular_data)
+# Create CSV file from the unique tabular data with the specified header
+with open(csv_file_name, 'w', newline='') as csv_file:
+    csv_writer = csv.writer(csv_file)
+    csv_writer.writerow(['serialNo', 'extSensorID', 'meterStatusIEE', 'startTs', 'endTs', 'sensorID', 'status', 'deviceOperationalStatus', 'meterProgramID'])
+    csv_writer.writerows(unique_tabular_data)
 
-        # Send alert to Teams
-        message = f"CSV file '{csv_file_name}' is stored in this location: {os.path.abspath(csv_file_name)}"
-        teams_payload = {"text": message}
-        requests.post(teams_webhook_url, json=teams_payload)
+# Send alert to Teams
+message = f"CSV file '{csv_file_name}' is stored in this location: {os.path.abspath(csv_file_name)}"
+teams_payload = {"text": message}
+requests.post(teams_webhook_url, json=teams_payload)
 
-        print(f"CSV file created and alert sent: {csv_file_name}")
-        print("-" * 100)
+print(f"CSV file created and alert sent: {csv_file_name}")
+print("-" * 100)
