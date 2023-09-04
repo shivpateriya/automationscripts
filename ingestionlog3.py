@@ -16,7 +16,7 @@ teams_webhook_url = "YOUR_TEAMS_WEBHOOK_URL"
 # Get the list of log files matching the pattern
 log_files = glob.glob(pattern)
 
-# Create a set to store unique tabular data
+# Create a set to store unique tabular data as tuples
 unique_tabular_data = set()
 
 # Iterate over each log file
@@ -32,7 +32,10 @@ for file in log_files:
                 if line.strip() and not line.startswith("serialNo extSensorID meterStatusIEE"):
                     data = line.strip().split()  # Split the line into columns
                     if len(data) == 9:  # Assuming 9 columns in the tabular data
-                        unique_tabular_data.add(tuple(data))  # Add the line as a tuple
+                        data_tuple = tuple(data)  # Convert the data list to a tuple
+                        unique_tabular_data.add(data_tuple)  # Add the tuple to the set
+                else:
+                    capture_data = False
 
 # Construct the CSV file name
 current_date = datetime.today().strftime('%Y%m%d')
