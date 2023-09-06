@@ -22,20 +22,25 @@ unique_tabular_data = set()
 # Iterate over each log file
 for file in log_files:
     capture_data = False
+    tabular_data = []  # Store tabular data lines
 
-    # Open the log file and search for lines containing "Unsuccessfully published"
-    with open(file, encoding="utf-8") as f:
-        for line in f:
-            if "Unsuccessfully published" in line:
-                capture_data = True
-            elif capture_data:
-                if line.strip() and not line.startswith("serialNo extSensorID meterStatusIEE"):
-                    data = line.strip().split()  # Split the line into columns
-                    if len(data) == 9:  # Assuming 9 columns in the tabular data
-                        data_tuple = tuple(data)  # Convert the data list to a tuple
-                        unique_tabular_data.add(data_tuple)  # Add the tuple to the set
-                else:
-                    capture_data = False
+    # Check if the filename starts with "ConfigurationExport"
+    if os.path.basename(file).startswith("ConfigurationExport"):
+        file_name = os.path.basename(file)  # Get the filename
+        
+        # Open the log file and search for lines containing "Unsuccessfully published"
+        with open(file, encoding="utf-8") as f:
+            for line in f:
+                if "Unsuccessfully published" in line:
+                    capture_data = True
+                elif capture_data:
+                    if line.strip() and not line.startswith("serialNo extSensorID meterStatusIEE"):
+                        data = line.strip().split()  # Split the line into columns
+                        if len(data) == 9:  # Assuming 9 columns in the tabular data
+                            data_tuple = tuple(data)  # Convert the data list to a tuple
+                            unique_tabular_data.add((file_name,) + data_tuple)  # Add the filename to the tuple and add it to the set
+                    else:
+                        capture_data = False
 
 # Construct the CSV file name
 current_date = datetime.today().strftime('%Y%m%d')
@@ -44,7 +49,7 @@ csv_file_name = f"PbcExportUnpublishedTabularData{current_date}dyamanica.csv"
 # Create CSV file from the unique tabular data with the specified header
 with open(csv_file_name, 'w', newline='') as csv_file:
     csv_writer = csv.writer(csv_file)
-    csv_writer.writerow(['serialNo', 'extSensorID', 'meterStatusIEE', 'startTs', 'endTs', 'sensorID', 'status', 'deviceOperationalStatus', 'meterProgramID'])
+    csv_writer.writerow(['filename', 'serialNo', 'extSensorID', 'meterStatusIEE', 'startTs', 'endTs', 'sensorID', 'status', 'deviceOperationalStatus', 'meterProgramID'])
     csv_writer.writerows(unique_tabular_data)
 
 # Send alert to Teams
