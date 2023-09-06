@@ -24,23 +24,20 @@ for file in log_files:
     capture_data = False
     tabular_data = []  # Store tabular data lines
 
-    # Check if the filename starts with "ConfigurationExport"
-    if os.path.basename(file).startswith("ConfigurationExport"):
-        file_name = os.path.basename(file)  # Get the filename
-        
-        # Open the log file and search for lines containing "Unsuccessfully published"
-        with open(file, encoding="utf-8") as f:
-            for line in f:
-                if "Unsuccessfully published" in line:
-                    capture_data = True
-                elif capture_data:
-                    if line.strip() and not line.startswith("serialNo extSensorID meterStatusIEE"):
-                        data = line.strip().split()  # Split the line into columns
-                        if len(data) == 9:  # Assuming 9 columns in the tabular data
-                            data_tuple = tuple(data)  # Convert the data list to a tuple
-                            unique_tabular_data.add((file_name,) + data_tuple)  # Add the filename to the tuple and add it to the set
-                    else:
-                        capture_data = False
+    # Open the log file and search for lines containing "Unsuccessfully published"
+    with open(file, encoding="utf-8") as f:
+        for line in f:
+            if "Unsuccessfully published" in line:
+                capture_data = True
+            elif capture_data:
+                if line.strip().startswith("ConfigurationExport"):
+                    file_name = line.strip()  # Get the filename
+                    capture_data = False  # Stop capturing data after filename
+                elif line.strip() and not line.startswith("serialNo extSensorID meterStatusIEE"):
+                    data = line.strip().split()  # Split the line into columns
+                    if len(data) == 9:  # Assuming 9 columns in the tabular data
+                        data_tuple = tuple(data)  # Convert the data list to a tuple
+                        unique_tabular_data.add((file_name,) + data_tuple)  # Add the filename to the tuple and add it to the set
 
 # Construct the CSV file name
 current_date = datetime.today().strftime('%Y%m%d')
