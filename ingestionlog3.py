@@ -23,35 +23,28 @@ tabular_data = []
 for file in log_files:
     capture_data = False
     current_filename = None
-    log_data = []
 
     # Open the log file
     with open(file, encoding="utf-8") as f:
         for line in f:
             if "ERROR" in line and "Unsuccessfully published" in line:
                 capture_data = True
+            elif capture_data and "LOG {" in line:
                 # Extract the filename from the line
                 current_filename = re.search(r'\{(.+?)\}', line).group(1).split('#')[0].strip()
-            elif capture_data and "LOG {" in line:
-                # Reset data for a new entry
-                log_data = []
-                log_data.append(current_filename)
+                capture_data = False
             elif capture_data and line.strip() and not line.startswith("sensorID smpID startTS endTS serialNo MDL_REF_smpID"):
                 data = line.strip().split()  # Split the line into columns
                 if len(data) == 6:  # Assuming 6 columns in the tabular data
-                    log_data.extend(data)
-                    if len(log_data) == 7:  # We've collected all the data for this entry
-                        tabular_data.append({
-                            'filename': log_data[0],
-                            'sensorID': log_data[1],
-                            'smpID': log_data[2],
-                            'startTS': log_data[3],
-                            'endTS': log_data[4],
-                            'serialNo': log_data[5],
-                            'MDL_REF_smpID': log_data[6]
-                        })
-                        # Reset for the next entry
-                        log_data = []
+                    tabular_data.append({
+                        'filename': current_filename,
+                        'sensorID': data[0],
+                        'smpID': data[1],
+                        'startTS': data[2],
+                        'endTS': data[3],
+                        'serialNo': data[4],
+                        'MDL_REF_smpID': data[5]
+                    })
 
 # Construct the CSV file name
 current_date = datetime.today().strftime('%Y%m%d')
