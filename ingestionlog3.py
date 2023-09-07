@@ -2,6 +2,7 @@ import glob
 import os
 import requests
 import csv
+import re
 from datetime import datetime
 
 # Define the directory containing the log files
@@ -31,7 +32,9 @@ for file in log_files:
                 capture_data = True
             elif capture_data and "LOG {" in line:
                 # Extract the filename from the line
-                current_filename = re.search(r'\{(.+?)\}', line).group(1).split('#')[0].strip()
+                filename_match = re.search(r'{([^}]+)}', line)
+                if filename_match:
+                    current_filename = filename_match.group(1).split('#')[0].strip()
                 capture_data = False
             elif capture_data and line.strip() and not line.startswith("sensorID smpID startTS endTS serialNo MDL_REF_smpID"):
                 data = line.strip().split()  # Split the line into columns
