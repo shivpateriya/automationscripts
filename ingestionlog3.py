@@ -2,6 +2,7 @@ import glob
 import os
 import requests
 import csv
+import re
 from datetime import datetime
 
 # Define the directory containing the log files
@@ -29,8 +30,10 @@ for file in log_files:
         for line in f:
             if "ERROR" in line and "Unsuccessfully published" in line:
                 capture_data = True
-                # Extract the filename from the line
-                file_name = line.split('{')[1].split('}')[0].strip()
+                # Extract the filename using regular expressions
+                match = re.search(r'\{(.+?)\}', line)
+                if match:
+                    file_name = match.group(1).split('#')[0].strip()
                 continue
             if capture_data and line.strip():
                 if not line.startswith("sensorID smpID startTS endTS serialNo MDL_REF_smpID"):
