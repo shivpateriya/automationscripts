@@ -2,7 +2,6 @@ import glob
 import os
 import requests
 import csv
-import re
 from datetime import datetime
 
 # Define the directory containing the log files
@@ -17,7 +16,7 @@ teams_webhook_url = "YOUR_TEAMS_WEBHOOK_URL"
 # Get the list of log files matching the pattern
 log_files = glob.glob(pattern)
 
-# Create a list to store tabular data as dictionaries
+# Create a list to store tabular data
 tabular_data = []
 
 # Iterate over each log file
@@ -32,22 +31,18 @@ for file in log_files:
                 capture_data = True
             elif capture_data and "LOG {" in line:
                 # Extract the filename from the line
-                filename_match = re.search(r'{([^}]+)}', line)
-                if filename_match:
-                    current_filename = filename_match.group(1).split('#')[0].strip()
+                filename_parts = line.split('{', 1)[1].split('}')[0].split('#')
+                if len(filename_parts) == 2:
+                    current_filename = filename_parts[0].strip()
                 capture_data = False
-            elif capture_data and line.strip() and not line.startswith("sensorID smpID startTS endTS serialNo MDL_REF_smpID"):
-                data = line.strip().split()  # Split the line into columns
-                if len(data) == 6:  # Assuming 6 columns in the tabular data
-                    tabular_data.append({
-                        'filename': current_filename,
-                        'sensorID': data[0],
-                        'smpID': data[1],
-                        'startTS': data[2],
-                        'endTS': data[3],
-                        'serialNo': data[4],
-                        'MDL_REF_smpID': data[5]
-                    })
+            elif capture_data and "sensorID" in line:
+                # Skip the header line
+                continue
+            elif capture_data and line.strip():
+                # Split the tabular data
+                data = line.strip().split()
+                if len(data) == 6:
+                    tabular_data.append([current_filename] + data)
 
 # Construct the CSV file name
 current_date = datetime.today().strftime('%Y%m%d')
@@ -55,9 +50,8 @@ csv_file_name = f"PbcExportUnpublishedTabularData{current_date}dyamanica.csv"
 
 # Create CSV file from the tabular data with the specified header
 with open(csv_file_name, 'w', newline='') as csv_file:
-    fieldnames = ['filename', 'sensorID', 'smpID', 'startTS', 'endTS', 'serialNo', 'MDL_REF_smpID']
-    csv_writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
-    csv_writer.writeheader()
+    csv_writer = csv.writer(csv_file)
+    csv_writer.writerow(['filename', 'sensorID', 'smpID', 'startTS', 'endTS', 'serialNo', 'MDL_REF_smpID'])
     csv_writer.writerows(tabular_data)
 
 # Send alert to Teams
