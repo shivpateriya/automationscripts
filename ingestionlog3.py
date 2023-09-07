@@ -34,14 +34,15 @@ for file in log_files:
                 filename_parts = line.split('{', 1)[1].split('}')[0].split('#')
                 if len(filename_parts) == 2:
                     current_filename = filename_parts[0].strip()
-                capture_data = False
-            elif capture_data and "sensorID" in line:
-                # Skip the header line
-                continue
+                    capture_data = False
+                else:
+                    capture_data = False  # In case the filename extraction fails
+            elif capture_data and "serialNo extSensorID meterStatusIEE startTs endTs sensorID status deviceOperationalStatus meterProgramID" in line:
+                capture_data = False  # Skip the header line
             elif capture_data and line.strip():
                 # Split the tabular data
                 data = line.strip().split()
-                if len(data) == 6:
+                if len(data) == 9:  # Assuming 9 columns in the tabular data
                     tabular_data.append([current_filename] + data)
 
 # Construct the CSV file name
@@ -51,7 +52,7 @@ csv_file_name = f"PbcExportUnpublishedTabularData{current_date}dyamanica.csv"
 # Create CSV file from the tabular data with the specified header
 with open(csv_file_name, 'w', newline='') as csv_file:
     csv_writer = csv.writer(csv_file)
-    csv_writer.writerow(['filename', 'sensorID', 'smpID', 'startTS', 'endTS', 'serialNo', 'MDL_REF_smpID'])
+    csv_writer.writerow(['filename', 'serialNo', 'extSensorID', 'meterStatusIEE', 'startTs', 'endTs', 'sensorID', 'status', 'deviceOperationalStatus', 'meterProgramID'])
     csv_writer.writerows(tabular_data)
 
 # Send alert to Teams
