@@ -16,13 +16,12 @@ teams_webhook_url = "YOUR_TEAMS_WEBHOOK_URL"
 # Get the list of log files matching the pattern
 log_files = glob.glob(pattern)
 
-# Create a set to store unique tabular data as tuples
-unique_tabular_data = set()
+# Create a list to store tabular data as dictionaries
+tabular_data = []
 
 # Iterate over each log file
 for file in log_files:
     capture_data = False
-    tabular_data = []  # Store tabular data lines
     file_name = None
 
     # Open the log file and search for lines containing both "ERROR" and "Unsuccessfully published" in the same line
@@ -34,21 +33,30 @@ for file in log_files:
                 file_name = line.split('{')[1].split('}')[0].strip()
                 continue
             if capture_data and line.strip():
-                if not line.startswith("sensorID smpID startTS endTS seriallo MDL_REF_smpID"):
+                if not line.startswith("sensorID smpID startTS endTS serialNo MDL_REF_smpID"):
                     data = line.strip().split()  # Split the line into columns
                     if len(data) == 6:  # Assuming 6 columns in the tabular data
-                        data_tuple = tuple(data)  # Convert the data list to a tuple
-                        unique_tabular_data.add((file_name,) + data_tuple)  # Add the filename to the tuple and add it to the set
+                        data_dict = {
+                            'filename': file_name,
+                            'sensorID': data[0],
+                            'smpID': data[1],
+                            'startTS': data[2],
+                            'endTS': data[3],
+                            'serialNo': data[4],
+                            'MDL_REF_smpID': data[5]
+                        }
+                        tabular_data.append(data_dict)
 
 # Construct the CSV file name
 current_date = datetime.today().strftime('%Y%m%d')
 csv_file_name = f"PbcExportUnpublishedTabularData{current_date}dyamanica.csv"
 
-# Create CSV file from the unique tabular data with the specified header
+# Create CSV file from the tabular data with the specified header
 with open(csv_file_name, 'w', newline='') as csv_file:
-    csv_writer = csv.writer(csv_file)
-    csv_writer.writerow(['filename', 'sensorID', 'smpID', 'startTS', 'endTS', 'serialNo', 'MDL_REF_smpID'])
-    csv_writer.writerows(unique_tabular_data)
+    fieldnames = ['filename', 'sensorID', 'smpID', 'startTS', 'endTS', 'serialNo', 'MDL_REF_smpID']
+    csv_writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+    csv_writer.writeheader()
+    csv_writer.writerows(tabular_data)
 
 # Send alert to Teams
 message = f"CSV file '{csv_file_name}' is stored in this location: {os.path.abspath(csv_file_name)}"
