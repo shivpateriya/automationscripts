@@ -3,6 +3,7 @@ import os
 import requests
 import csv
 from datetime import datetime
+import re
 
 # Define the directory containing the log files
 log_dir = "/path/to/log/dir"
@@ -19,6 +20,11 @@ log_files = glob.glob(pattern)
 # Create a list to store tabular data
 tabular_data = []
 
+# Regular expressions to match relevant lines
+error_pattern = re.compile(r"ERROR")
+unsuccessful_pattern = re.compile(r"Unsuccessfully published")
+filename_pattern = re.compile(r"{ConfigurationExport_(.*?)\}")
+
 # Iterate over each log file
 for file in log_files:
     capture_data = False
@@ -27,23 +33,20 @@ for file in log_files:
     # Open the log file
     with open(file, encoding="utf-8") as f:
         for line in f:
-            if "ERROR" in line and "Unsuccessfully published" in line:
+            if error_pattern.search(line) and unsuccessful_pattern.search(line):
                 capture_data = True
-            elif capture_data and "LOG {" in line:
-                # Extract the filename from the line
-                filename_parts = line.split('{', 1)[1].split('}')[0].split('#')
-                if len(filename_parts) == 2:
-                    current_filename = filename_parts[0].strip()
+            elif capture_data:
+                filename_match = filename_pattern.search(line)
+                if filename_match:
+                    current_filename = filename_match.group(1)
                     capture_data = False
-                else:
-                    capture_data = False  # In case the filename extraction fails
-            elif capture_data and "serialNo extSensorID meterStatusIEE startTs endTs sensorID status deviceOperationalStatus meterProgramID" in line:
-                capture_data = False  # Skip the header line
-            elif capture_data and line.strip():
-                # Split the tabular data
-                data = line.strip().split()
-                if len(data) == 9:  # Assuming 9 columns in the tabular data
-                    tabular_data.append([current_filename] + data)
+                elif "serialNo extSensorID meterStatusIEE startTs endTs sensorID status deviceOperationalStatus meterProgramID" in line:
+                    capture_data = False  # Skip the header line
+                elif line.strip():
+                    # Split the tabular data
+                    data = line.strip().split()
+                    if len(data) == 9:  # Assuming 9 columns in the tabular data
+                        tabular_data.append([current_filename] + data)
 
 # Construct the CSV file name
 current_date = datetime.today().strftime('%Y%m%d')
