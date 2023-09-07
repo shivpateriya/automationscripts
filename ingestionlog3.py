@@ -2,6 +2,7 @@ import glob
 import os
 import requests
 import csv
+import re
 from datetime import datetime
 
 # Define the directory containing the log files
@@ -19,6 +20,10 @@ log_files = glob.glob(pattern)
 # Create a set to store unique tabular data as tuples
 unique_tabular_data = set()
 
+# Define regular expressions for "Unsuccessfully published" and "ConfigurationExport"
+unsuccessful_pattern = re.compile(r"Unsuccessfully published")
+config_export_pattern = re.compile(r"ConfigurationExport.*")
+
 # Iterate over each log file
 for file in log_files:
     capture_data = False
@@ -27,10 +32,10 @@ for file in log_files:
     # Open the log file and search for lines containing "Unsuccessfully published"
     with open(file, encoding="utf-8") as f:
         for line in f:
-            if "Unsuccessfully published" in line:
+            if unsuccessful_pattern.search(line):
                 capture_data = True
             elif capture_data:
-                if line.strip().startswith("ConfigurationExport"):
+                if config_export_pattern.search(line):
                     file_name = line.strip()  # Get the filename
                     capture_data = False  # Stop capturing data after filename
                 elif line.strip() and not line.startswith("serialNo extSensorID meterStatusIEE"):
