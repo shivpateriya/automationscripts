@@ -3,7 +3,6 @@ import os
 import requests
 import csv
 from datetime import datetime
-import re
 
 # Define the directory containing the log files
 log_dir = "/path/to/log/dir"
@@ -17,46 +16,35 @@ teams_webhook_url = "YOUR_TEAMS_WEBHOOK_URL"
 # Get the list of log files matching the pattern
 log_files = glob.glob(pattern)
 
-# Create a list to store tabular data
-tabular_data = []
-
-# Regular expressions to match relevant lines
-error_pattern = re.compile(r"ERROR")
-unsuccessful_pattern = re.compile(r"Unsuccessfully published")
-filename_pattern = re.compile(r"{ConfigurationExport_(.*?)\}")
+# Create a set to store unique tabular data as tuples
+unique_tabular_data = set()
 
 # Iterate over each log file
 for file in log_files:
     capture_data = False
-    current_filename = None
+    filename = ""
 
-    # Open the log file
+    # Open the log file and search for lines containing "ERROR"
     with open(file, encoding="utf-8") as f:
         for line in f:
-            if error_pattern.search(line) and unsuccessful_pattern.search(line):
+            if "ERROR" in line and "Unsuccesfully published" in line:
                 capture_data = True
-            elif capture_data:
-                filename_match = filename_pattern.search(line)
-                if filename_match:
-                    current_filename = filename_match.group(1)
-                    capture_data = False
-                elif "serialNo extSensorID meterStatusIEE startTs endTs sensorID status deviceOperationalStatus meterProgramID" in line:
-                    capture_data = False  # Skip the header line
-                elif line.strip():
-                    # Split the tabular data
-                    data = line.strip().split()
-                    if len(data) == 9:  # Assuming 9 columns in the tabular data
-                        tabular_data.append([current_filename] + data)
+                filename = line.split("LOG")[1].strip()  # Extract the filename
+            elif capture_data and not line.startswith("serialNo extSensorID meterStatusIEE"):
+                data = line.strip().split()  # Split the line into columns
+                if len(data) == 9:  # Assuming 9 columns in the tabular data
+                    data_tuple = tuple(data)  # Convert the data list to a tuple
+                    unique_tabular_data.add((filename,) + data_tuple)  # Add filename as the first element
 
 # Construct the CSV file name
 current_date = datetime.today().strftime('%Y%m%d')
 csv_file_name = f"PbcExportUnpublishedTabularData{current_date}dyamanica.csv"
 
-# Create CSV file from the tabular data with the specified header
+# Create CSV file from the unique tabular data with the specified header
 with open(csv_file_name, 'w', newline='') as csv_file:
     csv_writer = csv.writer(csv_file)
     csv_writer.writerow(['filename', 'serialNo', 'extSensorID', 'meterStatusIEE', 'startTs', 'endTs', 'sensorID', 'status', 'deviceOperationalStatus', 'meterProgramID'])
-    csv_writer.writerows(tabular_data)
+    csv_writer.writerows(unique_tabular_data)
 
 # Send alert to Teams
 message = f"CSV file '{csv_file_name}' is stored in this location: {os.path.abspath(csv_file_name)}"
