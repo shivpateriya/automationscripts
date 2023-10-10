@@ -24,7 +24,7 @@ for file in log_files:
     capture_data = False
     filename = ""
 
-    # Open the log file and search for lines containing "ERROR"
+    # Open the log file and search for lines containing "ERROR" and "Unsuccesfully published"
     with open(file, encoding="utf-8") as f:
         for line in f:
             if "ERROR" in line and "Unsuccesfully published" in line:
