@@ -12,10 +12,9 @@ def find_matching_files(locations):
     matching_files = []
 
     for location in locations:
-        location = location.split("kxsReadingDelta.")[0]  # Remove everything after "kxsReadingDelta."
         dir_path = os.path.dirname(location)  # Get the directory path
         for ext in ['.0', '.1']:
-            file_path = os.path.join(dir_path, f"kxsReadingDelta{ext}")
+            file_path = os.path.join(dir_path, f"{location}{ext}")
             if os.path.exists(file_path):
                 matching_files.append(file_path)
 
@@ -27,7 +26,6 @@ matching_files = find_matching_files(file_locations)
 # Modify the file locations in dbw.dat based on matching files
 with open(input_file, "w") as file:
     for location in file_locations:
-        location = location.split("kxsReadingDelta.")[0]  # Remove everything after "kxsReadingDelta."
         if location in matching_files:
             modified_location = f"{location}.1"
         else:
