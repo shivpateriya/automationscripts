@@ -7,26 +7,27 @@ input_file = "dbw.dat"
 with open(input_file, "r") as file:
     file_locations = file.read().splitlines()
 
-# Function to check if a directory exists
-def directory_exists(location):
-    return os.path.exists(location)
-
-# Process each file location
 new_file_locations = []
 
 for location in file_locations:
-    location_with_1 = f"{location}.1"
-    if directory_exists(location_with_1):
-        new_file_locations.append(location_with_1)
-    else:
-        location_with_0 = f"{location}.0"
-        if directory_exists(location_with_0):
-            new_file_locations.append(location_with_0)
-        else:
-            new_file_locations.append(location)
+    location = location + ".0" if os.path.exists(location) else location + ".1"
+    new_file_locations.append(location)
 
 # Write the modified list of file locations back to the input file
 with open(input_file, "w") as file:
     file.writelines("\n".join(new_file_locations))
 
-print("File locations have been modified in", input_file)
+# Now, let's check which directories don't exist
+non_existent_directories = []
+
+for location in file_locations:
+    if not os.path.exists(location):
+        non_existent_directories.append(location)
+
+if non_existent_directories:
+    print("Directories that don't exist:")
+    for directory in non_existent_directories:
+        print(directory)
+else:
+    print("All directories exist.")
+

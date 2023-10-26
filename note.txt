@@ -1,0 +1,6 @@
+ for location in locations:
+    
+    location = location + ".0" if os.path.exists(location) else location+ ".1"
+    new_file_locations.append(location)
+
+    
