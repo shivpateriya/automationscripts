@@ -1,4 +1,5 @@
 import os
+import re
 
 # Define the name of the input file
 input_file = "dbw.dat"
@@ -7,34 +8,34 @@ input_file = "dbw.dat"
 with open(input_file, "r") as file:
     file_locations = file.read().splitlines()
 
-# Function to check for .0 or .1 files and add them to a list
-def find_matching_files(locations):
+# Function to find matching files in a directory
+def find_matching_files_in_directory(directory):
+    dynamic_file_pattern = re.compile(r"(kxsReadingDelta|kxsReadingHistoryDelta)\.([01])")
     matching_files = []
 
-    for location in locations:
-        dir_path = os.path.dirname(location)  # Get the directory path
-        for ext in ['.0', '.1']:
-            file_path = os.path.join(dir_path, f"{location}{ext}")
-            if os.path.exists(file_path):
-                matching_files.append(file_path)
+    for file_name in os.listdir(directory):
+        match = dynamic_file_pattern.match(file_name)
+        if match:
+            matching_files.append(match.group(0))
 
     return matching_files
-
-# Find matching files in the locations from dbw.dat
-matching_files = find_matching_files(file_locations)
 
 # Modify the file locations in dbw.dat based on matching files
 with open(input_file, "w") as file:
     for location in file_locations:
-        if location in matching_files:
-            modified_location = f"{location}.1"
+        # Extract the directory path from the location
+        dir_path = os.path.dirname(location)
+        
+        # Find matching files in the directory
+        matching_files = find_matching_files_in_directory(dir_path)
+
+        if matching_files:
+            # Use the first matching file found
+            modified_location = os.path.join(dir_path, re.sub(r'\.\d$', '', matching_files[0]))
         else:
-            modified_location = f"{location}.0"
+            # If no matching file is found, append ".0" by default
+            modified_location = re.sub(r'\.\d$', '.0', location)
+        
         file.write(modified_location + "\n")
 
-if matching_files:
-    print("Matching files found:")
-    for file in matching_files:
-        print(file)
-else:
-    print("No matching files found.")
+print("File locations have been modified in", input_file)
