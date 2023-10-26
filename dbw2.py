@@ -7,25 +7,23 @@ input_file = "dbw.dat"
 with open(input_file, "r") as file:
     file_locations = file.read().splitlines()
 
-# Function to check if a directory with extension exists
-def directory_exists_with_extension(location, extension):
-    directory = os.path.join(location, extension)
-    return os.path.exists(directory)
+# Function to check if a directory exists
+def directory_exists(location):
+    return os.path.exists(location)
 
 # Process each file location
 new_file_locations = []
 
 for location in file_locations:
-    parts = location.rsplit('.', 1)
-    
-    if len(parts) == 2:
-        name, _ = parts
-        if directory_exists_with_extension(name, '1'):
-            new_file_locations.append(f"{name}.1")
-        else:
-            new_file_locations.append(f"{name}.0")
+    location_with_1 = f"{location}.1"
+    if directory_exists(location_with_1):
+        new_file_locations.append(location_with_1)
     else:
-        new_file_locations.append(location)
+        location_with_0 = f"{location}.0"
+        if directory_exists(location_with_0):
+            new_file_locations.append(location_with_0)
+        else:
+            new_file_locations.append(location)
 
 # Write the modified list of file locations back to the input file
 with open(input_file, "w") as file:
