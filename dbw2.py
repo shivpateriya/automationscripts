@@ -7,24 +7,23 @@ input_file = "dbw.dat"
 with open(input_file, "r") as file:
     file_locations = file.read().splitlines()
 
-# Function to check if a directory with .0 or .1 exists
+# Function to check if a directory with extension exists
 def directory_exists_with_extension(location, extension):
     directory = os.path.join(location, extension)
     return os.path.exists(directory)
 
-# Modify the file locations and add to dbw.dat based on the criteria
+# Process each file location
 new_file_locations = []
+
 for location in file_locations:
     parts = location.rsplit('.', 1)
-    if len(parts) == 2:  # If there's a dot in the location
-        name, extension = parts
-        if extension == '0' or extension == '1':
-            if directory_exists_with_extension(name, extension):
-                new_file_locations.append(location)
-            else:
-                new_file_locations.append(name)
+    
+    if len(parts) == 2:
+        name, _ = parts
+        if directory_exists_with_extension(name, '1'):
+            new_file_locations.append(f"{name}.1")
         else:
-            new_file_locations.append(location)
+            new_file_locations.append(f"{name}.0")
     else:
         new_file_locations.append(location)
 
