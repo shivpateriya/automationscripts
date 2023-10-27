@@ -15,20 +15,17 @@ new_file_locations = []
 for location in file_locations:
     # Replace "hdb", "hdb2", "hdb3", or "hdb4" with "hdb*"
     location_with_wildcard = re.sub(r"hdb[2-4]?", "hdb*", location)
-    
-    # Add ".0" and ".1" to the location
-    location_with_0 = location_with_wildcard + ".0"
-    location_with_1 = location_with_wildcard + ".1"
 
-    # Check if the location with "0" exists
-    if os.path.exists(location_with_0):
-        new_file_locations.append(os.path.abspath(location_with_0))
-    # Check if the location with "1" exists
-    elif os.path.exists(location_with_1):
-        new_file_locations.append(os.path.abspath(location_with_1))
-    # If neither "0" nor "1" exists, use the original location
+    # Use glob to check if any files or directories match the wildcard location
+    matching_files = glob.glob(location_with_wildcard + ".*")
+
+    if matching_files:
+        # If matching files exist, use the first matching file's absolute path
+        location = os.path.abspath(matching_files[0])
     else:
-        new_file_locations.append(os.path.abspath(location))
+        location = os.path.abspath(location)  # Use the original location if no matches found
+
+    new_file_locations.append(location)
 
 # Write the modified absolute paths back to the input file
 with open(input_file, "w") as file:
