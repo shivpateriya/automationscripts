@@ -13,10 +13,13 @@ with open(input_file, "r") as file:
 for i in range(len(file_locations)):
     file_locations[i] = file_locations[i].rsplit('.', 1)[0]
 
+# Filter out locations that end with "kxsReadingHistory" followed by any characters
+filtered_file_locations = [location for location in file_locations if not re.search(r'kxsReadingHistory.*$', location)]
+
 # Now, let's check which directories don't exist and handle wildcards
 new_file_locations = []
 
-for location in file_locations:
+for location in filtered_file_locations:
     # Replace "hdb", "hdb2", "hdb3", or "hdb4" with "hdb*"
     location_with_wildcard = re.sub(r"hdb[2-4]?", "hdb*", location)
 
