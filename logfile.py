@@ -38,3 +38,36 @@ process_logs_and_update_dbw_dat(user_input)
 # Rest of your original code
 input_file = "dbw.dat"
 # ... (the rest of your code remains unchanged)
+
+
+
+
+
+#---------------------
+
+# Directory where the eod*.csv files are located
+directory_path = "eeec"
+
+# Initialize the output file with a header
+output_filename = "EOD_Analysis_2023_10_31.csv"
+with open(output_filename, 'w') as output_file:
+    output_file.write("Filename, Data\n")
+
+# Loop over the input files in the specific directory
+for filename in glob.glob(os.path.join(directory_path, 'eod*.csv')):
+    d = filename.replace(os.path.join(directory_path, 'eod_analysis_'), '').replace('.csv', '').replace('.', '-')
+    dat = subprocess.check_output(['cat', filename], universal_newlines=True).replace('\n', ' ')
+    
+    # Append the data to the output file
+    with open(output_filename, 'a') as output_file:
+        output_file.write(f'{d}, {dat}\n')
+
+# Now, run the sed command
+subprocess.run(['sed', '-i', 's/\/.*//g', os.path.join(directory_path, 'eod*')])
+
+# Finally, run the loop
+for filename in glob.glob(os.path.join(directory_path, 'eod*.csv')):
+    d = filename.replace(os.path.join(directory_path, 'eod_analysis_'), '').replace('.csv', '').replace('.', '-')
+    dat = subprocess.check_output(['cat', filename], universal_newlines=True).replace('\n', ' ')
+    with open(output_filename, 'a') as output_file:
+        output_file.write(f'{d}, {dat}\n')
